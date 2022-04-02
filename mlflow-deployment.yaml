@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-tracking-server
+  labels:
+      app: mlflow-tracking-server
+spec:
+  # The replica count is kept to one for simplicity purposes.
+  # To create a highly available app, the replica count would
+  # be higher.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-tracking-server-pods
+  template:
+    metadata:
+      labels:
+        app: mlflow-tracking-server-pods
+    spec:
+      containers:
+        - name: mlflow-tracking-server-pod
+          # The docker image is pulled from container registry.
+          image: yyz.ocir.io/yzdey9wyttei/mlflow
+          imagePullPolicy: Always
+          env: # we extract the values we set in the configmap
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-secret
+                key: MYSQL_PASSWORD
+          - name: MYSQL_USER
+            valueFrom:
+              configMapKeyRef:
+                name: mlflow-configmap
+                key: MYSQL_USER
+          - name: MYSQL_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: mlflow-configmap
+                key: MYSQL_HOST
+          - name: MYSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: mlflow-configmap
+                key: MYSQL_DATABASE
+          - name: OCI_BUCKET_URI
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-secret
+                key: OCI_BUCKET_URI
+          ports:
+           - containerPort: 5000
+      imagePullSecrets:
+        - name: orcalesecret
